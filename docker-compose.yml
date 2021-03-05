@@ -1,0 +1,38 @@
+version: '3'
+
+services:
+  ts-half-plus-two:
+    image: tensorflow/serving
+    container_name: ts-half-plus-two
+    ports:
+      - 8501:8501
+    volumes:
+      - ./docker/tensorflow-serving/models/saved_model_half_plus_two_cpu:/models/half_plus_two
+    environment:
+      - MODEL_NAME=half_plus_two
+
+  ts-models:
+    image: tensorflow/serving
+    container_name: ts-models
+    ports:
+      - 8502:8501
+    volumes:
+#      - ./docker/tensorflow-serving/models:/models
+      - ./docker/tensorflow-serving/models/saved_model_half_plus_two_cpu:/models/half_plus_two
+      - ./docker/tensorflow-serving/models/saved_model_mnist:/models/mnist
+      - ./docker/tensorflow-serving/models/models.config:/models/models.config
+    command:
+#      - /usr/bin/tf_serving_entrypoint.sh
+      - '--model_config_file=/models/models.config'
+      - '--model_config_file_poll_wait_seconds=60'
+
+  flask-server:
+    build: ./docker/flask-server
+    container_name: flask-server
+    ports:
+      - 5000:5000
+    volumes:
+      - ./src/app:/usr/src/app
+    environment:
+      PORT: 5000
+      FLASK_DEBUG: 1
